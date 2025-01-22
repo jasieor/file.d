@@ -42,8 +42,6 @@ type Plugin struct {
 	batcher      *pipeline.RetriableBatcher
 	avgEventSize int
 
-	begin []int
-
 	time         string
 	headerPrefix string
 	cancel       context.CancelFunc
@@ -175,6 +173,11 @@ type Config struct {
 
 	// > @3@4@5@6
 	// >
+	// > Enable split big batches
+	SplitEnabled bool `json:"split_enabled" default:"false"` // *
+
+	// > @3@4@5@6
+	// >
 	// > Retention milliseconds for retry to DB.
 	Retention  cfg.Duration `json:"retention" default:"1s" parse:"duration"` // *
 	Retention_ time.Duration
@@ -202,6 +205,7 @@ type KeepAliveConfig struct {
 
 type data struct {
 	outBuf []byte
+	begin  []int
 }
 
 func init() {
@@ -223,7 +227,6 @@ func (p *Plugin) Start(config pipeline.AnyConfig, params *pipeline.OutputPluginP
 	p.registerMetrics(params.MetricCtl)
 	p.mu = &sync.Mutex{}
 	p.headerPrefix = `{"` + p.config.BatchOpType + `":{"_index":"`
-	p.begin = make([]int, 0, p.config.BatchSize_+1)
 
 	if len(p.config.IndexValues) == 0 {
 		p.config.IndexValues = append(p.config.IndexValues, "@time")
@@ -341,6 +344,7 @@ func (p *Plugin) out(workerData *pipeline.WorkerData, batch *pipeline.Batch) err
 	if *workerData == nil {
 		*workerData = &data{
 			outBuf: make([]byte, 0, p.config.BatchSize_*p.avgEventSize),
+			begin:  make([]int, 0, p.config.BatchSize_+1),
 		}
 	}
 
@@ -351,16 +355,24 @@ func (p *Plugin) out(workerData *pipeline.WorkerData, batch *pipeline.Batch) err
 	}
 
 	eventsCount := 0
-	p.begin = p.begin[:0]
+	data.begin = data.begin[:0]
 	data.outBuf = data.outBuf[:0]
 	batch.ForEach(func(event *pipeline.Event) {
 		eventsCount++
-		p.begin = append(p.begin, len(data.outBuf))
+		data.begin = append(data.begin, len(data.outBuf))
 		data.outBuf = p.appendEvent(data.outBuf, event)
 	})
-	p.begin = append(p.begin, len(data.outBuf))
+	data.begin = append(data.begin, len(data.outBuf))
 
-	statusCode, err := p.saveOrSplit(0, eventsCount, p.begin, data.outBuf)
+	var statusCode int
+	var err error
+
+	if p.config.SplitEnabled {
+		statusCode, err = p.saveOrSplit(0, eventsCount, data.begin, data.outBuf)
+	} else {
+		statusCode, err = p.save(data.outBuf)
+	}
+
 	if err != nil {
 		p.sendErrorMetric.WithLabelValues(strconv.Itoa(statusCode)).Inc()
 		switch statusCode {
@@ -379,6 +391,16 @@ func (p *Plugin) out(workerData *pipeline.WorkerData, batch *pipeline.Batch) err
 	}
 
 	return nil
+}
+
+func (p *Plugin) save(data []byte) (int, error) {
+	return p.client.DoTimeout(
+		http.MethodPost,
+		NDJSONContentType,
+		data,
+		p.config.ConnectionTimeout_,
+		p.reportESErrors,
+	)
 }
 
 func (p *Plugin) saveOrSplit(left int, right int, begin []int, data []byte) (int, error) {
