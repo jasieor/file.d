@@ -1,32 +1,288 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <title>file.d documentation</title>
-  <link rel="icon" type="image/png" href="/file.d/static/file.d.png" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-  <meta name="description" content="A blazing fast tool for building data pipelines: read, process, and output events.">
-  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-  <link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/vue.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الآلة الحاسبة الذكية</title>
+
+    <!-- ربط مكتبات خارجية -->
+    <!-- مكتبة Math.js -->
+    <script src="https://cdn.jsdelivr.net/npm/mathjs@10.6.4/lib/browser/math.js"></script>
+    <!-- مكتبة MathSteps -->
+    <script src="https://unpkg.com/mathsteps@1.4.0/dist/mathsteps.min.js"></script>
+    <!-- مكتبة i18next للترجمة -->
+    <script src="https://unpkg.com/i18next@21.6.3/dist/umd/i18next.min.js"></script>
+    <!-- مكتبة Animate.css للتأثيرات -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <!-- مكتبة خطوط Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo&display=swap" rel="stylesheet">
+
+    <!-- تصميم CSS المدمج -->
+    <style>
+        /* تصميم CSS */
+        body {
+            background: linear-gradient(135deg, #1abc9c, #2ecc71);
+            font-family: 'Cairo', sans-serif;
+            margin: 0;
+            padding: 0;
+            direction: rtl;
+            text-align: center;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .calculator {
+            margin: 50px auto;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        #display {
+            width: 100%;
+            padding: 15px;
+            font-size: 2em;
+            border: none;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            text-align: right;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .buttons button,
+        #analyze-btn {
+            padding: 20px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .buttons button:hover,
+        #analyze-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        #analyze-btn {
+            grid-column: span 4;
+            background-color: #e74c3c;
+        }
+
+        .language-switcher {
+            margin-top: 20px;
+        }
+
+        #language-select {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        /* تأثيرات إضافية */
+        .btn-operator {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-operator:hover {
+            background-color: rgba(255, 255, 255, 0.25);
+        }
+    </style>
 </head>
 <body>
-  <div id="app"></div>
-  <script>
-    window.$docsify = {
-      name: 'file.d',
-      repo: 'https://github.com/ozontech/file.d',
-      loadSidebar: true,
-      loadNavbar: true,
-      subMaxLevel: 2,
-      maxLevel: 1,
-      coverpage: true,
-      auto2top: true,
-      markdown: {
-        gfm: true
-      }
-    }
-  </script>
-  <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
-  <script src="//unpkg.com/docsify-copy-code"></script>
+    <div class="calculator animate__animated animate__fadeIn">
+        <input type="text" id="display" placeholder="0" disabled>
+        <div class="buttons">
+            <!-- الصف الأول -->
+            <button class="btn" data-value="7">7</button>
+            <button class="btn" data-value="8">8</button>
+            <button class="btn" data-value="9">9</button>
+            <button class="btn btn-operator" data-value="/">÷</button>
+            <!-- الصف الثاني -->
+            <button class="btn" data-value="4">4</button>
+            <button class="btn" data-value="5">5</button>
+            <button class="btn" data-value="6">6</button>
+            <button class="btn btn-operator" data-value="*">×</button>
+            <!-- الصف الثالث -->
+            <button class="btn" data-value="1">1</button>
+            <button class="btn" data-value="2">2</button>
+            <button class="btn" data-value="3">3</button>
+            <button class="btn btn-operator" data-value="-">−</button>
+            <!-- الصف الرابع -->
+            <button class="btn" data-value="0">0</button>
+            <button class="btn" data-value=".">.</button>
+            <button class="btn btn-operator" data-value="+">+</button>
+            <button class="btn btn-operator" data-value="clear">C</button>
+            <!-- زر التحليل -->
+            <button id="analyze-btn" onclick="analyzeEquation()"></button>
+        </div>
+    </div>
+    <!-- مغير اللغة -->
+    <div class="language-switcher">
+        <select id="language-select" onchange="changeLanguage()">
+            <option value="ar">العربية</option>
+            <option value="en">English</option>
+            <!-- يمكن إضافة لغات أخرى هنا -->
+        </select>
+    </div>
+
+    <!-- سكربت JavaScript المدمج -->
+    <script>
+        // تحديد العناصر
+        const display = document.getElementById('display');
+        const buttons = document.querySelectorAll('.btn');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const languageSelect = document.getElementById('language-select');
+
+        // ترجمة النصوص
+        const translations = {
+            ar: {
+                analyze: 'تحليل المعادلة',
+                error: 'خطأ',
+                enterEquation: 'الرجاء إدخال معادلة صحيحة.',
+                clear: 'مسح',
+                divide: '÷',
+                multiply: '×',
+                subtract: '−',
+                add: '+',
+                decimal: '.',
+                result: 'النتيجة'
+            },
+            en: {
+                analyze: 'Analyze Equation',
+                error: 'Error',
+                enterEquation: 'Please enter a valid equation.',
+                clear: 'C',
+                divide: '/',
+                multiply: '*',
+                subtract: '-',
+                add: '+',
+                decimal: '.',
+                result: 'Result'
+            },
+            // إضافة لغات أخرى إن وجد
+        };
+
+        let currentLanguage = 'ar';
+
+        // إعداد النصوص بناءً على اللغة
+        function updateTexts() {
+            analyzeBtn.textContent = translations[currentLanguage].analyze;
+            display.placeholder = '0';
+            buttons.forEach(button => {
+                const value = button.getAttribute('data-value');
+                if (value === 'clear') {
+                    button.textContent = translations[currentLanguage].clear;
+                } else if (value === '/') {
+                    button.textContent = translations[currentLanguage].divide;
+                } else if (value === '*') {
+                    button.textContent = translations[currentLanguage].multiply;
+                } else if (value === '-') {
+                    button.textContent = translations[currentLanguage].subtract;
+                } else if (value === '+') {
+                    button.textContent = translations[currentLanguage].add;
+                } else if (value === '.') {
+                    button.textContent = translations[currentLanguage].decimal;
+                }
+            });
+        }
+
+        // تغيير اللغة
+        function changeLanguage() {
+            currentLanguage = languageSelect.value;
+            updateTexts();
+            // تحديث اتجاه النص
+            document.body.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
+        }
+
+        // إضافة الأحداث للأزرار
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                const value = button.dataset.value;
+                if (value === 'clear') {
+                    clearDisplay();
+                } else {
+                    appendValue(value);
+                }
+            });
+        });
+
+        // وظائف التحكم
+        function appendValue(value) {
+            display.value += value;
+        }
+
+        function clearDisplay() {
+            display.value = '';
+        }
+
+        // تحليل المعادلة
+        function analyzeEquation() {
+            if (display.value === '') {
+                alert(translations[currentLanguage].enterEquation);
+                return;
+            }
+            try {
+                const steps = mathSteps(display.value);
+                displayAnalysis(steps);
+            } catch {
+                alert(translations[currentLanguage].error);
+            }
+        }
+
+        // معالجة الرموز وتنسيق المعادلة
+        function formatEquation(equation) {
+            let formattedEquation = equation.replace(/÷/g, '/').replace(/×/g, '*').replace(/−/g, '-');
+            return formattedEquation;
+        }
+
+        // تحليل خطوات المعادلة باستخدام MathSteps
+        function mathSteps(equation) {
+            let formattedEquation = formatEquation(equation);
+
+            const lastChar = formattedEquation.slice(-1);
+            if (['+', '-', '*', '/', '.'].includes(lastChar)) {
+                formattedEquation = formattedEquation.slice(0, -1);
+            }
+
+            const steps = mathsteps.simplifyExpression(formattedEquation);
+            if (steps.length === 0) {
+                return [translations[currentLanguage].enterEquation];
+            }
+            return steps.map(step => step.newNode.toString());
+        }
+
+        // عرض التحليل
+        function displayAnalysis(steps) {
+            let analysisWindow = window.open('', '_blank', 'width=500,height=500');
+            analysisWindow.document.write(`<html lang="${currentLanguage}"><head><title>${translations[currentLanguage].analyze}</title></head><body style="font-family: 'Cairo', sans-serif; direction: ${document.body.dir}; text-align: center;">`);
+            analysisWindow.document.write('<h2>' + translations[currentLanguage].analyze + '</h2>');
+            analysisWindow.document.write('<ul style="list-style: none; padding: 0;">');
+            steps.forEach(step => {
+                analysisWindow.document.write(`<li style="margin: 10px 0;">${step}</li>`);
+            });
+            analysisWindow.document.write('</ul></body></html>');
+        }
+
+        // تهيئة التطبيق
+        updateTexts();
+        changeLanguage();
+    </script>
 </body>
-</html>
+      </html>
+      
